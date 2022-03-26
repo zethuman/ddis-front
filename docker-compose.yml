@@ -1,0 +1,18 @@
+version: '3'
+services:
+  node:
+    image: ddis-front:latest
+    working_dir: /usr/src/front
+    command: "npm start"
+    networks:
+      - esnet
+    volumes:
+    - './logs:/usr/src/front/logs'
+    ports:
+    - 3000:3000
+volumes:
+  esdata1:
+    driver: local
+networks:
+  esnet:
+    driver: bridge

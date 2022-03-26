@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 services:
   node:
     image: registry.gitlab.com/d6763/front:latest
@@ -7,9 +7,9 @@ services:
     networks:
       - esnet
     volumes:
-    - './logs:/usr/src/front/logs'
+      - "./logs:/usr/src/front/logs"
     ports:
-    - 3000:3000
+      - 3000:3000
 volumes:
   esdata1:
     driver: local

@@ -1,7 +1,7 @@
 import React from 'react'
 import styled from 'styled-components'
 import { useLoading } from './useLoading'
-import Spinner from '../pages/shared/Spinner'
+import Spinner from '../shared/Spinner'
 
 const MainContainer = styled.div`
   z-index: 1000;

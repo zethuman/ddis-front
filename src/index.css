@@ -24,3 +24,7 @@ body {
 .fc .fc-toolbar.fc-header-toolbar {
   margin: 1.5em;
 }
+
+.ant-tabs-nav{
+  background-color: #FFF;
+}

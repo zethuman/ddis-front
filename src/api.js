@@ -1,14 +1,8 @@
 import axios from "axios";
-import env from "react-dotenv";
 import Loading from "./shared/Loading";
-// const config = {
-//   headers: {
-//     "Access-Control-Allow-Origin": "*"
-//   }
-// }
-const BACKEND_CORE = "http://localhost:4020";
-const BACKEND_DATA = "http://localhost:4010";
-// const BACKEND_DATA = env.BACKEND_DATA
+
+const BACKEND_CORE = process.env.REACT_APP_BACKEND_CORE;
+const BACKEND_DATA = process.env.REACT_APP_BACKEND_DATA;
 
 export const getLocalImages = async () => {
   return axios

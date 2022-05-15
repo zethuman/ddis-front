@@ -251,7 +251,7 @@ const UserImages = () => {
     },
     {
       title: "NAME",
-      // width: 40,
+      width: "10%",
       render: (item) => {
         return <>{item.name}</>;
       },
@@ -272,7 +272,7 @@ const UserImages = () => {
     },
     {
       title: "Created",
-      width: "1%",
+      width: "4%",
       render: (item) => {
         return (
           <CreatedDiv>
@@ -293,7 +293,7 @@ const UserImages = () => {
     //     item.hash && <>{item.hash}</>,
     // },
     {
-      title: "ACTION",
+      title: "",
       width: "10%",
       render: (item) => (
         <div
@@ -306,17 +306,32 @@ const UserImages = () => {
           }}
         >
           {item.hash ? (
-            <Button
-              onClick={() => {
-                getImageDescription({
-                  name: item.name,
-                  tag: item.tag,
-                  hash: item.hash,
-                });
-              }}
-            >
-              Change
-            </Button>
+            <>
+              <Button
+                onClick={() => {
+                  getImageDescription({
+                    name: item.name,
+                    tag: item.tag,
+                    hash: item.hash,
+                  });
+                }}
+              >
+                Change
+              </Button>
+              {/* <Button
+                type="primary"
+                danger
+                onClick={() => {
+                  getImageDescription({
+                    name: item.name,
+                    tag: item.tag,
+                    hash: item.hash,
+                  });
+                }}
+              >
+                Delete
+              </Button> */}
+            </>
           ) : (
             <Button
               type="primary"
@@ -336,9 +351,6 @@ const UserImages = () => {
     },
   ];
 
-  // if (isLoading) {
-  //   return <Loading />;
-  // }
   return (
     <>
       <Main>
@@ -367,7 +379,7 @@ const UserImages = () => {
         <Modal
           visible={modalVisible}
           title="Image"
-          okText="PUSH to IPFS storage"
+          okText="PUSH to DDIS"
           cancelText="Close"
           onCancel={() => {
             setModalVisible(false);

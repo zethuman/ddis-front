@@ -11,6 +11,7 @@ import {
   message,
   Modal,
 } from "antd";
+import { Modal as CustomModal } from "react-modal";
 import { PlusOutlined, SearchOutlined } from "@ant-design/icons";
 import styled from "styled-components";
 import { useLoading } from "../context/useLoading";
@@ -22,7 +23,18 @@ const MainDiv = styled.div`
 const OuterDiv = styled.div`
   margin-top: 100px;
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
+  align-items: center;
+  flex-direction: column;
+`;
+
+const HistoryDiv = styled.div`
+  margin-top: 50px;
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  ${"" /* justify-content: center; */}
+  ${"" /* align-content: center; */}
 `;
 
 const StyledContentContainer = styled.div`
@@ -91,6 +103,18 @@ const CommunityImages = () => {
   const [searchImageName, setSearchImageName] = useState("");
   const [foundImage, setFoundImage] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [searchHistory, setSearchHistory] = useState(null);
+
+  React.useEffect(() => {
+    searchHistory
+      ? localStorage.setItem("history", JSON.stringify(searchHistory))
+      : setSearchHistory(
+          localStorage.getItem("history") &&
+            JSON.parse(localStorage.getItem("history")).map((item) => {
+              return { title: item.name + ":" + item.tag, ...item };
+            })
+        );
+  }, [searchHistory]);
 
   const onClickSearch = () => {
     if (searchImageName.length > 2 && searchImageName.includes(":")) {
@@ -100,7 +124,12 @@ const CommunityImages = () => {
           name: splitted[0],
           tag: splitted[1],
         };
-        // console.log(body)
+        searchHistory
+          ? setSearchHistory([
+              { title: body.name + ":" + body.tag, ...body },
+              ...searchHistory.slice(0, 10),
+            ])
+          : setSearchHistory([{ title: body.name + ":" + body.tag, ...body }]);
         getCommunityImage(body).then((response) => {
           // console.log(response.data.data);
           if (response === "err" || response.status === 500) {
@@ -126,6 +155,32 @@ const CommunityImages = () => {
     } else {
       message.error("Please search as NAME:TAG");
     }
+  };
+
+  const onClickHistory = (body) => {
+    setSearchHistory([
+      { title: body.name + ":" + body.tag, ...body },
+      ...searchHistory.slice(0, 9),
+    ]);
+    getCommunityImage(body).then((response) => {
+      // console.log(response.data.data);
+      if (response === "err" || response.status === 500) {
+        console.log("got err");
+        // console.log(response)
+        message.error("Oops, something went wrong!");
+      } else if (response.status === 204) {
+        message.info("No data found");
+      } else {
+        setFoundImage({
+          hash: response.data.data?.hash,
+          description: response.data.data?.metadata?.description,
+          name: body.name,
+          tag: body.tag,
+        });
+        console.log(response.data.data);
+        setModalVisible(true);
+      }
+    });
   };
 
   const handlePull = () => {
@@ -185,16 +240,54 @@ const CommunityImages = () => {
                   Search
                 </div>
               </StyledButtonSearch>
-              {/* </Tooltip> */}
             </StyledSearchButtonContainer>
           </StyledInputContainer>
         </StyledContentContainer>
+        <HistoryDiv>
+          {searchHistory && (
+            <>
+              <div>
+                <div
+                  style={{
+                    fontSize: "large",
+                    color: "rgba(171, 171, 171, 1)",
+                  }}
+                >
+                  Search History
+                </div>
+                <div
+                  style={{
+                    marginBottom: "10px",
+                    fontSize: "x-small",
+                    color: "rgba(171, 171, 171, 1)",
+                    cursor: "pointer",
+                  }}
+                  onClick={() => {
+                    setSearchHistory(null);
+                    localStorage.removeItem("history");
+                  }}
+                >
+                  clean
+                </div>
+              </div>
+              {searchHistory.map((item) => (
+                <div
+                  style={{ cursor: "pointer", marginTop: "5px" }}
+                  onClick={() => {
+                    onClickHistory({ name: item.name, tag: item.tag });
+                  }}
+                >
+                  {item.title}
+                </div>
+              ))}
+            </>
+          )}
+        </HistoryDiv>
       </OuterDiv>
       {modalVisible && (
         <Modal
           visible={modalVisible}
           title="Found Image"
-          // cancelButtonProps={{ style: { display: "none" } }}
           okText="PULL"
           cancelText="Close"
           onCancel={() => {
@@ -213,22 +306,10 @@ const CommunityImages = () => {
               <ImageStaticDiv>TAG:</ImageStaticDiv>{" "}
               <ImageDataDiv>{foundImage.tag}</ImageDataDiv>
             </InnerImageDiv>
-            {/* <InnerImageDiv>
-              <ImageStaticDiv>HASH:</ImageStaticDiv>{" "}
-              <ImageDataDiv>{foundImage.hash}</ImageDataDiv>
-            </InnerImageDiv> */}
             <InnerImageDiv>
               <ImageStaticDiv>DESCRIPTION:</ImageStaticDiv>{" "}
               <ImageDataDiv>{foundImage.description}</ImageDataDiv>
             </InnerImageDiv>
-            {/* <Button
-              type="primary"
-              onClick={() => {
-                handlePull();
-              }}
-            >
-              Pull
-            </Button> */}
           </OuterImageDiv>
         </Modal>
       )}

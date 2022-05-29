@@ -64,8 +64,22 @@ export const postLocalImage = async (body) => {
 
 export const getCommunityImage = async (body) => {
   return axios
-    .post(`${BACKEND_DATA}/images/get`, body)
+    .post(`${BACKEND_DATA}/images/get`, { ...body })
     .then((response) => response)
+    .catch((err) => {
+      console.log(err);
+      return { data: { data: "404" } };
+    });
+};
+
+export const deleteCommunityImage = async (body) => {
+  console.log("del body", body);
+  return axios
+    .delete(`${BACKEND_DATA}/images/delete`, { data: body })
+    .then((response) => {
+      console.log("delete response", response);
+      return response;
+    })
     .catch((err) => {
       console.log(err);
       return { data: { data: "404" } };

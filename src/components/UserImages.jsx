@@ -1,8 +1,21 @@
 import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { CopyToClipboard } from "react-copy-to-clipboard";
-import { Button, Table, Input, message, Modal } from "antd";
-import { PlusOutlined, SearchOutlined } from "@ant-design/icons";
+import {
+  Button,
+  Table,
+  Input,
+  message,
+  Modal,
+  Dropdown,
+  Menu,
+  Space,
+} from "antd";
+import {
+  SearchOutlined,
+  DownOutlined,
+  DeleteOutlined,
+} from "@ant-design/icons";
 import styled from "styled-components";
 import {
   getLocalImages,
@@ -10,6 +23,7 @@ import {
   pushLocalImage,
   postLocalImage,
   getCommunityImage,
+  deleteCommunityImage,
 } from "../api";
 
 import { useLoading } from "../context/useLoading";
@@ -82,12 +96,12 @@ const UserImages = () => {
   const [chosenImage, setChosenImage] = useState(null);
   const [imageDescription, setImageDescription] = useState("");
   const [userImagesList, setUserImagesList] = useState(null);
+  const [rawUserImagesList, setRawUserImagesList] = useState(null);
   const [searchList, setSearchList] = useState(null);
   const [searchImageName, setSearchImageName] = React.useState(null);
 
   React.useEffect(() => {
     let searchArray = userImagesList;
-
     if (searchImageName) {
       searchArray = searchArray.filter((image) => {
         return image.name?.toLowerCase().includes(searchImageName);
@@ -115,6 +129,7 @@ const UserImages = () => {
       }
       setPushedImagesCount(response.data.all.length);
     });
+
     getLocalImages().then((response) => {
       if (response === "err") {
         console.log("got err");
@@ -138,58 +153,112 @@ const UserImages = () => {
             return item;
           }
         });
-        setUserImagesList(dataRaw);
+        setRawUserImagesList(dataRaw);
       }
     });
     // }
   }, [pushedImagesCount]);
 
-  const handlePush = () => {
-    const body = {
-      name: chosenImage.name,
-      tag: chosenImage.tag,
-    };
-    console.log(body);
-    showLoading();
-
-    // loadingRequest(body).then((response) => {
-    //   console.log(response);
-    //   hideLoading();
-
-    //   console.log("imageCount", pushedImagesCount)
-    //   setPushedImagesCount(pushedImagesCount + 1);
-    //   toast.error("request success");
-
-    // });
-
-    pushLocalImage(body).then((response) => {
-      if (response === "err") {
-        // message.error("Oops, something went wrong!");
-        toast.error("Oops, something went wrong!");
-        console.log(response);
-        console.log("got err");
-      } else {
-        body.metadata = { description: imageDescription };
-        body.hash = response.data.ipfs_hash;
-        console.log("response", response);
-        console.log("body", body);
-        postLocalImage(body).then((responsePost) => {
-          hideLoading();
-          if (responsePost === "err") {
-            // message.error("Oops, something went wrong!");
-            toast.error("Oops, something went wrong!");
-            console.log(responsePost);
-            console.log("got err");
-          } else {
-            toast.success("Successfully pushed");
-            setPushedImagesCount(pushedImagesCount + 1);
-          }
-        });
+  useEffect(() => {
+    const fetchData = async () => {
+      if (rawUserImagesList) {
+        const images = await Promise.all(
+          rawUserImagesList.map(async (item) => {
+            if (item.hash) {
+              let isPosted;
+              const body = {
+                name: item.name,
+                tag: item.tag,
+              };
+              await getCommunityImage(body).then(async (response) => {
+                if (response.status === 200) {
+                  isPosted = true;
+                }
+              });
+              item.isPosted = isPosted;
+            } else {
+              item.isPosted = false;
+            }
+            return item;
+          })
+        );
+        setUserImagesList(images);
       }
-      hideLoading();
-    });
+    };
+    fetchData();
+  }, [rawUserImagesList]);
+
+  const handlePush = () => {
+    showLoading();
+    console.log("chosen image", chosenImage);
+    if (chosenImage.hash) {
+      const body = {
+        name: chosenImage.name,
+        tag: chosenImage.tag,
+        hash: chosenImage.hash,
+      };
+      body.metadata = { description: imageDescription };
+      console.log("body", body);
+      postLocalImage(body).then((responsePost) => {
+        hideLoading();
+        if (responsePost === "err") {
+          // message.error("Oops, something went wrong!");
+          toast.error("Oops, something went wrong!");
+          console.log(responsePost);
+          console.log("got err");
+        } else {
+          toast.success("Successfully pushed");
+          setPushedImagesCount(pushedImagesCount + 1);
+        }
+        hideLoading();
+        setImageDescription("");
+      });
+    } else {
+      const body = {
+        name: chosenImage.name,
+        tag: chosenImage.tag,
+      };
+      console.log(body);
+
+      // loadingRequest(body).then((response) => {
+      //   console.log(response);
+      //   hideLoading();
+
+      //   console.log("imageCount", pushedImagesCount)
+      //   setPushedImagesCount(pushedImagesCount + 1);
+      //   toast.error("request success");
+
+      // });
+
+      pushLocalImage(body).then((response) => {
+        if (response === "err") {
+          // message.error("Oops, something went wrong!");
+          toast.error("Oops, something went wrong!");
+          console.log(response);
+          console.log("got err");
+        } else {
+          body.metadata = { description: imageDescription };
+          body.hash = response.data.ipfs_hash;
+          console.log("response", response);
+          console.log("body", body);
+          postLocalImage(body).then((responsePost) => {
+            hideLoading();
+            if (responsePost === "err") {
+              // message.error("Oops, something went wrong!");
+              toast.error("Oops, something went wrong!");
+              console.log(responsePost);
+              console.log("got err");
+            } else {
+              toast.success("Successfully pushed");
+              setPushedImagesCount(pushedImagesCount + 1);
+            }
+          });
+        }
+        hideLoading();
+        setImageDescription("");
+      });
+    }
     setChosenImage(null);
-    setImageDescription("");
   };
 
   const getImageDescription = (body) => {
@@ -235,6 +304,42 @@ const UserImages = () => {
     });
   };
 
+  const handleDelete = () => {
+    const body = {
+      name: chosenImage.name,
+      tag: chosenImage.tag,
+    };
+    console.log("body", body);
+    showLoading();
+    deleteCommunityImage(body).then((response) => {
+      hideLoading();
+      setChangeModalVisible(false);
+      if (response === "err") {
+        toast.error("Oops, something went wrong!");
+        console.log(response);
+        console.log("got err");
+      } else {
+        setPushedImagesCount(pushedImagesCount - 1);
+        toast.success("Successfully deleted");
+      }
+    });
+  };
+
+  const handleDropdownClick = (e) => {
+    message.info("Click on menu item.");
+    console.log("click", e);
+  };
+
+  const menu = (
+    <Menu
+      onClick={handleDropdownClick}
+      items={[
+        { key: "1", label: "Change" },
+        { key: "1", label: "Delete" },
+      ]}
+    />
+  );
+
   const columns = [
     {
       title: "",
@@ -242,7 +347,7 @@ const UserImages = () => {
       render: (item) => {
         return item.hash ? (
           <CopyToClipboard text={`${item.name}:${item.tag}`}>
-            <Button onClick={() => message.success("copied")}>Copy</Button>
+            <Button style={{borderRadius:'10px'}} onClick={() => message.success("copied")}>Copy</Button>
           </CopyToClipboard>
         ) : (
           <></>
@@ -294,60 +399,85 @@ const UserImages = () => {
     // },
     {
       title: "",
-      width: "10%",
-      render: (item) => (
-        <div
-          style={{
-            width: "100%",
-            display: "flex",
-            alignItems: "center",
-            flexDirection: "row",
-            justifyContent: "center",
-          }}
-        >
-          {item.hash ? (
-            <>
+      width: "2%",
+      render: (item) => {
+        return (
+          <div
+            // style={
+            //   item.isPosted
+            //     ? {
+            //         width: "100%",
+            //         display: "flex",
+            //         alignItems: "center",
+            //         flexDirection: "row",
+            //         justifyContent: "space-between",
+            //       }
+            //     : {
+            //         width: "100%",
+            //         display: "flex",
+            //         alignItems: "center",
+            //         flexDirection: "row",
+            //         justifyContent: "center",
+            //       }
+            // }
+            style={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              flexDirection: "row",
+            }}
+          >
+            {/* {console.log("test", item.isPosted)} */}
+            {item.isPosted ? (
+              <>
+                <Button
+                  primary
+                  style={{ borderRadius: "10px" }}
+                  onClick={() => {
+                    getImageDescription({
+                      name: item.name,
+                      tag: item.tag,
+                      hash: item.hash,
+                    });
+                  }}
+                >
+                  Options
+                </Button>
+                <Button
+                  danger
+                  style={{
+                    marginLeft: "2%",
+                    borderRadius: "10px",
+                  }}
+                  onClick={() => {
+                    handleDelete();
+                  }}
+                >
+                  <DeleteOutlined />
+                </Button>
+              </>
+            ) : (
               <Button
-                onClick={() => {
-                  getImageDescription({
-                    name: item.name,
-                    tag: item.tag,
-                    hash: item.hash,
-                  });
-                }}
-              >
-                Change
-              </Button>
-              {/* <Button
                 type="primary"
-                danger
+                style={{
+                  width: "50%",
+                  borderRadius: "10px",
+                }}
                 onClick={() => {
-                  getImageDescription({
+                  setModalVisible(true);
+                  setChosenImage({
                     name: item.name,
                     tag: item.tag,
                     hash: item.hash,
                   });
                 }}
               >
-                Delete
-              </Button> */}
-            </>
-          ) : (
-            <Button
-              type="primary"
-              onClick={() => {
-                setModalVisible(true);
-                setChosenImage({
-                  name: item.name,
-                  tag: item.tag,
-                });
-              }}
-            >
-              Push
-            </Button>
-          )}
-        </div>
-      ),
+                Push
+              </Button>
+            )}
+          </div>
+        );
+      },
     },
   ];
 
@@ -355,11 +485,14 @@ const UserImages = () => {
     <>
       <Main>
         <Content>
+          {/* {console.log("searList", searchList)} */}
           {searchList && (
             <Table
               dataSource={searchList}
               columns={columns}
-              rowKey={(item) => item.Id}
+              rowKey={(item) => {
+                return item.Id;
+              }}
               title={() => (
                 <StyledHeaderContainer>
                   <StyledInput

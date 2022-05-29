@@ -377,7 +377,7 @@ const UserImages = () => {
     },
     {
       title: "Created",
-      width: "4%",
+      width: "2%",
       render: (item) => {
         return (
           <CreatedDiv>
@@ -399,7 +399,7 @@ const UserImages = () => {
     // },
     {
       title: "",
-      width: "2%",
+      width: "3%",
       render: (item) => {
         return (
           <div
@@ -441,7 +441,7 @@ const UserImages = () => {
                     });
                   }}
                 >
-                  Options
+                  Change
                 </Button>
                 <Button
                   danger
